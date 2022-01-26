@@ -20,7 +20,7 @@ contract LongDefiSushiAirdrop is ERC1155 {
     event SetDrop(uint256 indexed id, bytes32 root, uint256 maxClaimDate, string link);
     event Claimed(uint256 indexed id, address indexed to, uint256 amount);
 
-    address owner;
+    address public owner;
     //drop id => data
     mapping(uint256 => DropData) public drop;
     //drop id => address => amount claimed
@@ -37,7 +37,7 @@ contract LongDefiSushiAirdrop is ERC1155 {
         _;
     }
 
-    function setDrop(uint256 id, bytes32 root, uint256 maxClaimDate, string calldata link) public onlyOwner {
+    function setDrop(uint256 id, bytes32 root, uint256 maxClaimDate, string calldata link) external onlyOwner {
         drop[id] = DropData(root, maxClaimDate, link);
 
         emit SetDrop(id, root, maxClaimDate, link);
@@ -61,6 +61,10 @@ contract LongDefiSushiAirdrop is ERC1155 {
         _mint(to, id, amount, "");
 
         emit Claimed(id, to, amount);
+    }
+
+    function transferOwnership(address newOwner) external onlyOwner {
+        owner = newOwner;
     }
 
     function uri(uint256 id) public view override returns (string memory) {

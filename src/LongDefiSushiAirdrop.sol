@@ -6,7 +6,7 @@ import "./MerkleProof.sol";
 
 struct DropData {
     bytes32 root;
-    uint256 maxClaimDate;
+    uint256 expiry;
     string link;
 }
 
@@ -22,7 +22,7 @@ contract LongDefiSushiAirdrop is ERC1155 {
 
     address public owner;
     //drop id => data
-    mapping(uint256 => DropData) public drop;
+    mapping(uint256 => DropData) internal drop;
     //drop id => address => amount claimed
     mapping(uint256 => mapping(address => uint256)) public claimed;
 
@@ -45,7 +45,7 @@ contract LongDefiSushiAirdrop is ERC1155 {
 
     function claim(uint256 id, address to, uint256 amount, uint256 maxAmount, bytes32[] calldata proof) external {
         DropData memory data = drop[id];
-        if (data.maxClaimDate < block.timestamp) {
+        if (data.expiry < block.timestamp) {
             revert Error_DateExpired();
         }
         if (claimed[id][to] + amount > maxAmount) {
@@ -69,5 +69,9 @@ contract LongDefiSushiAirdrop is ERC1155 {
 
     function uri(uint256 id) public view override returns (string memory) {
         return drop[id].link;
+    }
+
+    function dropData(uint id) public view returns (DropData memory data) {
+        return drop[id];
     }
 }

@@ -21,6 +21,10 @@ contract LongDefiSushiAirdropTestGas is BaseTest {
         proofs.push(0xb3f1a57778f00726c33fc65d15cdb7cab131b264f764ec89da9af1fa0dafcee4);
     }
 
+    function testDeploy() public {
+        new LongDefiSushiAirdrop();
+    }
+
     function testSetDrop() public {
         longDefiSushiAirdrop.setDrop(0, 0xb09436ba49eafd4a7686f7ba1881c185ef86c40562996fd6c2e1362fbdaae88e, block.timestamp + 1 days, "ipfs://qaqaqaqaqaqaqaqaqaqaqaqaq");
     }

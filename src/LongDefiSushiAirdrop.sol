@@ -74,7 +74,9 @@ contract LongDefiSushiAirdrop is ERC1155 {
         if (data.expiry < block.timestamp) {
             revert Error_DateExpired();
         }
-        if (claimed[id][to] + amount > maxAmount) {
+        
+        uint256 totalClaimed = claimed[id][to] + amount;
+        if (totalClaimed > maxAmount) {
             revert Error_InvalidAmount();
         }
 
@@ -83,7 +85,7 @@ contract LongDefiSushiAirdrop is ERC1155 {
             revert Error_InvalidProof();
         }
 
-        claimed[id][to] += amount;
+        claimed[id][to] = totalClaimed;
         _mint(to, id, amount, "");
 
         emit Claimed(id, to, amount);

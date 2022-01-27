@@ -7,40 +7,50 @@ import "./MerkleProof.sol";
 struct DropData {
     bytes32 root;
     uint256 expiry;
-    string link;
 }
 
 /// @title LongDefiSushiAirdrop
 /// @author HHK-ETH
-/// @notice Airdrop multiple erc1155 tokens to selected addresses using merkle tree
-contract LongDefiSushiAirdrop is ERC1155 {
+/// @notice Airdrop any erc1155 token to selected addresses using merkle tree
+contract LongDefiSushiAirdrop is ERC1155TokenReceiver {
 
-    /// Errrors
+    /// -----------------------------------------------------------------------
+    /// Errors
+    /// -----------------------------------------------------------------------
 
     error Error_NotOwner();
     error Error_DateExpired();
     error Error_InvalidAmount();
     error Error_InvalidProof();
 
+    /// -----------------------------------------------------------------------
     /// Events
+    /// -----------------------------------------------------------------------
 
-    event SetDrop(uint256 indexed id, bytes32 root, uint256 maxClaimDate, string link);
+    event SetDrop(uint256 indexed id, bytes32 root, uint256 maxClaimDate, ERC1155 token);
     event Claimed(uint256 indexed id, address indexed to, uint256 amount);
 
-    /// Variables
+    /// -----------------------------------------------------------------------
+    /// Mutable variables & constructor
+    /// -----------------------------------------------------------------------
 
     /// @notice owner of the contract
-    address public owner;
+    address internal owner;
     /// @notice drop id => data
     mapping(uint256 => DropData) internal drop;
     /// @notice drop id => address => amount claimed
     mapping(uint256 => mapping(address => uint256)) public claimed;
+    /// @notice token address
+    ERC1155 internal token;
 
-    constructor() {
+    constructor(ERC1155 tokenAddress) {
         owner = msg.sender;
+        token = tokenAddress;
     }
 
+    /// -----------------------------------------------------------------------
     /// Modifiers
+    /// -----------------------------------------------------------------------
 
     /// @notice Modifier to make functions callable by owner only
     modifier onlyOwner() {
@@ -50,17 +60,18 @@ contract LongDefiSushiAirdrop is ERC1155 {
         _;
     }
 
+    /// -----------------------------------------------------------------------
     /// State change functions
+    /// -----------------------------------------------------------------------
 
     /// @notice Edit or add new token Id and airdrop merkle root
     /// @param id Id of the token to edit/add
     /// @param root Merkle root of the airdrop
     /// @param expiry Max date the token can be claimed
-    /// @param link Link to the token image/data
-    function setDrop(uint256 id, bytes32 root, uint256 expiry, string calldata link) external onlyOwner {
-        drop[id] = DropData(root, expiry, link);
+    function setDrop(uint256 id, bytes32 root, uint256 expiry) external onlyOwner {
+        drop[id] = DropData(root, expiry);
 
-        emit SetDrop(id, root, expiry, link);
+        emit SetDrop(id, root, expiry, token);
     }
 
     /// @notice Claim airdrop using merkle proofs
@@ -86,7 +97,7 @@ contract LongDefiSushiAirdrop is ERC1155 {
         }
 
         claimed[id][to] = totalClaimed;
-        _mint(to, id, amount, "");
+        token.safeTransferFrom(address(this), to, id, amount, "");
 
         emit Claimed(id, to, amount);
     }
@@ -96,20 +107,52 @@ contract LongDefiSushiAirdrop is ERC1155 {
     function transferOwnership(address newOwner) external onlyOwner {
         owner = newOwner;
     }
-
-    /// View functions
-
-    /// @notice View function to get token image/data link
-    /// @param id Id of the token
-    /// @return link Returns the link to token image/data
-    function uri(uint256 id) public view override returns (string memory link) {
-        return drop[id].link;
+    
+    /// @notice Edit the ERC1155 to interact with
+    /// @param newToken New token
+    function setToken(ERC1155 newToken) external onlyOwner {
+        token = newToken;
     }
+
+    /// -----------------------------------------------------------------------
+    /// No state change functions
+    /// -----------------------------------------------------------------------
 
     /// @notice View function to get token dropData
     /// @param id Id of the token/airdrop
     /// @return data Returns the DropData struct
-    function dropData(uint id) public view returns (DropData memory data) {
+    function dropData(uint id) external view returns (DropData memory data) {
         return drop[id];
     }
+
+    /// @notice View function to get the admin infos
+    /// @dev Allows variables to be internal so 1 getter instead of 2
+    /// @return _owner Return owner of the contract
+    /// @return _token Return ERC1155 token used by the contract
+    function adminInfos() external view returns (address _owner, ERC1155 _token) {
+        return (owner, token);
+    }
+
+    /// @dev ERC1155 compliance
+    function onERC1155Received(
+        address operator,
+        address from,
+        uint256 id,
+        uint256 amount,
+        bytes calldata data
+    ) external pure returns (bytes4) {
+        return this.onERC1155Received.selector;
+    }
+
+    /// @dev ERC1155 compliance
+    function onERC1155BatchReceived(
+        address operator,
+        address from,
+        uint256[] calldata ids,
+        uint256[] calldata amounts,
+        bytes calldata data
+    ) external pure returns (bytes4) {
+        return this.onERC1155BatchReceived.selector;
+    }
+
 }

@@ -3,6 +3,7 @@ pragma solidity ^0.8.11;
 
 import {BaseTest, console} from "./base/BaseTest.sol";
 import {LongDefiSushiAirdrop, DropData} from "./../LongDefiSushiAirdrop.sol";
+import {Erc1155Mock} from "./../Erc1155Mock.sol";
 
 //random test values from /merkle-generator
 //Root => 3d288e9ce649b3db2304f8ea072f7964771555dd364dc47de0bebe0da5eff0ec
@@ -12,21 +13,24 @@ import {LongDefiSushiAirdrop, DropData} from "./../LongDefiSushiAirdrop.sol";
 contract LongDefiSushiAirdropTestGas is BaseTest {
 
     LongDefiSushiAirdrop longDefiSushiAirdrop;
+    Erc1155Mock token;
     bytes32[] proofs;
 
     function setUp() public {
-        longDefiSushiAirdrop = new LongDefiSushiAirdrop();
-        longDefiSushiAirdrop.setDrop(0, 0xb09436ba49eafd4a7686f7ba1881c185ef86c40562996fd6c2e1362fbdaae88e, block.timestamp + 1 days, "ipfs://qaqaqaqaqaqaqaqaqaqaqaqaq");
+        token = new Erc1155Mock();
+        longDefiSushiAirdrop = new LongDefiSushiAirdrop(token);
+        token.mint(address(longDefiSushiAirdrop), 0, 100);
+        longDefiSushiAirdrop.setDrop(0, 0xb09436ba49eafd4a7686f7ba1881c185ef86c40562996fd6c2e1362fbdaae88e, block.timestamp + 1 days);
         proofs.push(0x2e440f19c31d80004c5756cf198c4d58820a4be61b29c0e494a54e7a8f571aaf);
         proofs.push(0xb3f1a57778f00726c33fc65d15cdb7cab131b264f764ec89da9af1fa0dafcee4);
     }
 
     function testDeploy() public {
-        new LongDefiSushiAirdrop();
+        new LongDefiSushiAirdrop(token);
     }
 
     function testSetDrop() public {
-        longDefiSushiAirdrop.setDrop(0, 0xb09436ba49eafd4a7686f7ba1881c185ef86c40562996fd6c2e1362fbdaae88e, block.timestamp + 1 days, "ipfs://qaqaqaqaqaqaqaqaqaqaqaqaq");
+        longDefiSushiAirdrop.setDrop(0, 0xb09436ba49eafd4a7686f7ba1881c185ef86c40562996fd6c2e1362fbdaae88e, block.timestamp + 1 days);
     }
     
     function testClaim() public {

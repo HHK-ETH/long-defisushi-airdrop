@@ -4,6 +4,9 @@ pragma solidity ^0.8.11;
 import "solmate/tokens/ERC1155.sol";
 import "./MerkleProof.sol";
 
+/// @notice Struct containing infos about airdrop
+/// @param root Root hash of the merkle tree
+/// @param expiry Max date to claim the airdrop
 struct DropData {
     bytes32 root;
     uint256 expiry;

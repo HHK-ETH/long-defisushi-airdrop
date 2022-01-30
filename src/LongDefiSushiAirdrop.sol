@@ -78,11 +78,11 @@ contract LongDefiSushiAirdrop is ERC1155TokenReceiver {
     }
 
     /// @notice Claim airdrop using merkle proofs
-    /// @param id Id of the token to claim, user to compute the leaf
-    /// @param to Address to receive the airdrop, user to compute the leaf
+    /// @param id Id of the token to claim, used to compute the leaf
+    /// @param to Address to receive the airdrop, used to compute the leaf
     /// @param amount Amount to claim, user can decide to claim less than deserved amount
     /// @param maxAmount Total amount deserved to the user, used to compute the leaf
-    /// @param proof Array of merkle proofs to compute the root
+    /// @param proof Array of ordered merkle proofs to compute the root
     function claim(uint256 id, address to, uint256 amount, uint256 maxAmount, bytes32[] calldata proof) external {
         DropData memory data = drop[id];
         if (data.expiry < block.timestamp) {
@@ -129,7 +129,6 @@ contract LongDefiSushiAirdrop is ERC1155TokenReceiver {
     }
 
     /// @notice View function to get the admin infos
-    /// @dev Allows variables to be internal so 1 getter instead of 2
     /// @return _owner Return owner of the contract
     /// @return _token Return ERC1155 token used by the contract
     function adminInfos() external view returns (address _owner, ERC1155 _token) {

@@ -7,9 +7,11 @@ import "./MerkleProof.sol";
 /// @notice Struct containing infos about airdrop
 /// @param root Root hash of the merkle tree
 /// @param expiry Max date to claim the airdrop
+/// @param price Price in wei to pay per token
 struct DropData {
     bytes32 root;
     uint256 expiry;
+    uint256 price;
 }
 
 /// @title LongDefiSushiAirdrop
@@ -24,13 +26,14 @@ contract LongDefiSushiAirdrop is ERC1155TokenReceiver {
     error Error_NotOwner();
     error Error_DateExpired();
     error Error_InvalidAmount();
+    error Error_InvalidPayment();
     error Error_InvalidProof();
 
     /// -----------------------------------------------------------------------
     /// Events
     /// -----------------------------------------------------------------------
 
-    event SetDrop(uint256 indexed id, bytes32 root, uint256 maxClaimDate, ERC1155 token);
+    event SetDrop(uint256 indexed id, bytes32 root, uint256 maxClaimDate, ERC1155 token, uint256 price);
     event Claimed(uint256 indexed id, address indexed to, uint256 amount);
 
     /// -----------------------------------------------------------------------
@@ -71,10 +74,11 @@ contract LongDefiSushiAirdrop is ERC1155TokenReceiver {
     /// @param id Id of the token to edit/add
     /// @param root Merkle root of the airdrop
     /// @param expiry Max date the token can be claimed
-    function setDrop(uint256 id, bytes32 root, uint256 expiry) external onlyOwner {
-        drop[id] = DropData(root, expiry);
+    /// @param price Price in wei to pay per token
+    function setDrop(uint256 id, bytes32 root, uint256 expiry, uint256 price) external onlyOwner {
+        drop[id] = DropData(root, expiry, price);
 
-        emit SetDrop(id, root, expiry, token);
+        emit SetDrop(id, root, expiry, token, price);
     }
 
     /// @notice Claim airdrop using merkle proofs
@@ -83,10 +87,14 @@ contract LongDefiSushiAirdrop is ERC1155TokenReceiver {
     /// @param amount Amount to claim, user can decide to claim less than deserved amount
     /// @param maxAmount Total amount deserved to the user, used to compute the leaf
     /// @param proof Array of ordered merkle proofs to compute the root
-    function claim(uint256 id, address to, uint256 amount, uint256 maxAmount, bytes32[] calldata proof) external {
+    function claim(uint256 id, address to, uint256 amount, uint256 maxAmount, bytes32[] calldata proof) external payable {
         DropData memory data = drop[id];
         if (data.expiry < block.timestamp) {
             revert Error_DateExpired();
+        }
+
+        if (msg.value < data.price * amount) {
+            revert Error_InvalidPayment();
         }
         
         uint256 totalClaimed = claimed[id][to] + amount;
@@ -115,6 +123,11 @@ contract LongDefiSushiAirdrop is ERC1155TokenReceiver {
     /// @param newToken New token
     function setToken(ERC1155 newToken) external onlyOwner {
         token = newToken;
+    }
+
+    function withdraw() external onlyOwner {
+        (bool success,) = payable(owner).call{value: address(this).balance}("");
+        require(success, "fail");
     }
 
     /// -----------------------------------------------------------------------

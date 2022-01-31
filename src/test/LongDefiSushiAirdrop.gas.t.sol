@@ -20,7 +20,7 @@ contract LongDefiSushiAirdropTestGas is BaseTest {
         token = new Erc1155Mock();
         longDefiSushiAirdrop = new LongDefiSushiAirdrop(token);
         token.mint(address(longDefiSushiAirdrop), 0, 100);
-        longDefiSushiAirdrop.setDrop(0, 0xb09436ba49eafd4a7686f7ba1881c185ef86c40562996fd6c2e1362fbdaae88e, block.timestamp + 1 days);
+        longDefiSushiAirdrop.setDrop(0, 0xb09436ba49eafd4a7686f7ba1881c185ef86c40562996fd6c2e1362fbdaae88e, block.timestamp + 1 days, 0.02 ether);
         proofs.push(0x2e440f19c31d80004c5756cf198c4d58820a4be61b29c0e494a54e7a8f571aaf);
         proofs.push(0xb3f1a57778f00726c33fc65d15cdb7cab131b264f764ec89da9af1fa0dafcee4);
     }
@@ -30,14 +30,20 @@ contract LongDefiSushiAirdropTestGas is BaseTest {
     }
 
     function testSetDrop() public {
-        longDefiSushiAirdrop.setDrop(0, 0xb09436ba49eafd4a7686f7ba1881c185ef86c40562996fd6c2e1362fbdaae88e, block.timestamp + 1 days);
+        longDefiSushiAirdrop.setDrop(0, 0xb09436ba49eafd4a7686f7ba1881c185ef86c40562996fd6c2e1362fbdaae88e, block.timestamp + 1 days, 0.02 ether);
     }
     
     function testClaim() public {
-        longDefiSushiAirdrop.claim(0, address(1), 2, 2, proofs);
+        longDefiSushiAirdrop.claim{value: 0.04 ether}(0, address(1), 2, 2, proofs);
     }
 
     function testTransferOwnership() public {
         longDefiSushiAirdrop.transferOwnership(address(0));
     }
+    
+    function testWithdraw() public {
+        longDefiSushiAirdrop.withdraw();
+    }
+
+    fallback() external payable {}
 }

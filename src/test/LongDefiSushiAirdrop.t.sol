@@ -20,24 +20,24 @@ contract LongDefiSushiAirdropTest is BaseTest {
         token = new Erc1155Mock();
         longDefiSushiAirdrop = new LongDefiSushiAirdrop(token);
         token.mint(address(longDefiSushiAirdrop), 0, 100);
-        longDefiSushiAirdrop.setDrop(0, 0xb09436ba49eafd4a7686f7ba1881c185ef86c40562996fd6c2e1362fbdaae88e, block.timestamp + 1 days);
+        longDefiSushiAirdrop.setDrop(0, 0xb09436ba49eafd4a7686f7ba1881c185ef86c40562996fd6c2e1362fbdaae88e, block.timestamp + 1 days, 0.02 ether);
         proofs.push(0x2e440f19c31d80004c5756cf198c4d58820a4be61b29c0e494a54e7a8f571aaf);
         proofs.push(0xb3f1a57778f00726c33fc65d15cdb7cab131b264f764ec89da9af1fa0dafcee4);
     }
 
     function testSetDrop() public {
-        longDefiSushiAirdrop.setDrop(0, 0xb09436ba49eafd4a7686f7ba1881c185ef86c40562996fd6c2e1362fbdaae88e, block.timestamp + 1 days);
+        longDefiSushiAirdrop.setDrop(0, 0xb09436ba49eafd4a7686f7ba1881c185ef86c40562996fd6c2e1362fbdaae88e, block.timestamp + 1 days, 0.02 ether);
         DropData memory data = longDefiSushiAirdrop.dropData(0);
         assertEq(data.expiry, block.timestamp + 1 days);
     }
     
     function testFailSetDrop_notOwner() public {
         vm.prank(address(0));
-        longDefiSushiAirdrop.setDrop(0, 0xb09436ba49eafd4a7686f7ba1881c185ef86c40562996fd6c2e1362fbdaae88e, block.timestamp + 1 days);
+        longDefiSushiAirdrop.setDrop(0, 0xb09436ba49eafd4a7686f7ba1881c185ef86c40562996fd6c2e1362fbdaae88e, block.timestamp + 1 days, 0.02 ether);
     }
 
     function testClaim() public {
-        longDefiSushiAirdrop.claim(0, address(1), 2, 2, proofs);
+        longDefiSushiAirdrop.claim{value: 0.04 ether}(0, address(1), 2, 2, proofs);
         assertEq(2, token.balanceOf(address(1), 0));
     }
 
@@ -45,18 +45,22 @@ contract LongDefiSushiAirdropTest is BaseTest {
         bytes32[] memory badProofs = new bytes32[](2);
         badProofs[0] = 0x0;
         badProofs[1] = 0xb3f1a57778f00726c33fc65d15cdb7cab131b264f764ec89da9af1fa0dafcee4;
-        longDefiSushiAirdrop.claim(0, address(1), 2, 2, badProofs);
+        longDefiSushiAirdrop.claim{value: 0.04 ether}(0, address(1), 2, 2, badProofs);
     }
 
     function testFailClaim_dateExpired() public {
         vm.warp(block.timestamp + 2 days);
-        longDefiSushiAirdrop.claim(0, address(1), 2, 2, proofs);
+        longDefiSushiAirdrop.claim{value: 0.04 ether}(0, address(1), 2, 2, proofs);
+    }
+    
+    function testFailClaim_invalidPayment() public {
+        longDefiSushiAirdrop.claim{value: 0.01 ether}(0, address(1), 2, 2, proofs);
     }
     
     function testFailClaim_InvalidAmount() public {
-        longDefiSushiAirdrop.claim(0, address(1), 1, 2, proofs);
-        longDefiSushiAirdrop.claim(0, address(1), 1, 2, proofs);
-        longDefiSushiAirdrop.claim(0, address(1), 1, 2, proofs); //fail on third as 2 is max from setUp
+        longDefiSushiAirdrop.claim{value: 0.02 ether}(0, address(1), 1, 2, proofs);
+        longDefiSushiAirdrop.claim{value: 0.02 ether}(0, address(1), 1, 2, proofs);
+        longDefiSushiAirdrop.claim{value: 0.02 ether}(0, address(1), 1, 2, proofs); //fail on third as 2 is max from setUp
     }
 
     function testTransferOwnership() public {
@@ -80,4 +84,20 @@ contract LongDefiSushiAirdropTest is BaseTest {
         vm.prank(address(0));
         longDefiSushiAirdrop.setToken(ERC1155(address(0)));
     }
+
+    function testWithdraw() public {
+        uint256 prevBalance = address(this).balance;
+        vm.deal(address(1), 1 ether);
+        vm.prank(address(1));
+        longDefiSushiAirdrop.claim{value: 0.02 ether}(0, address(1), 1, 2, proofs);
+        longDefiSushiAirdrop.withdraw();
+        assertEq(prevBalance + 0.02 ether, address(this).balance);
+    }
+
+    function testFailWithdraw_notOwner() public {
+        vm.prank(address(0));
+        longDefiSushiAirdrop.withdraw();
+    }
+
+    fallback() external payable {}
 }

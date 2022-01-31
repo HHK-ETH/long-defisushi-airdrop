@@ -1,39 +1,5 @@
-# Foundry template
+# long defisushi airdrop
 
-This is a template for a Foundry project.
+small frontend: https://longdefisushi.com/
 
-## Installation
-
-To install with [DappTools](https://github.com/dapphub/dapptools):
-
-```
-dapp install [user]/[repo]
-```
-
-To install with [Foundry](https://github.com/gakonst/foundry):
-
-```
-forge install [user]/[repo]
-```
-
-## Local development
-
-This project uses [Foundry](https://github.com/gakonst/foundry) as the development framework.
-
-### Dependencies
-
-```
-make update
-```
-
-### Compilation
-
-```
-make build
-```
-
-### Testing
-
-```
-make test
-```
+### Airdrop any erc1155 token to selected addresses using merkle tree
